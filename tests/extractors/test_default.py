@@ -82,7 +82,7 @@ def test_extract_url_handles_encode_path_true(nolog_extractor):
     assert url[0] == 'http://via.placeholder.com/100x100'
     assert url[3] == 'http://via.placeholder.com/%20400x400'
     # RFC_3986_PATH_SAFE keeps ':' unencoded, so path stays https:// not https%3A//
-    assert url[4] == 'https://twicpics.tefal.bg/https://dam.groupeseb.com/m/10ef8f277b681450/Digital-Nordica-Frypan-24cm-05JT-H2-tiff.tiff?timestamp=20240925095255&twic=v1/quality=70/resize=2000'
+    assert url[4] == 'https://images.example.test/https://assets.example.test/media/catalog/product/frypan-24cm.tiff?timestamp=20240925095255&transform=v1/quality=70/resize=2000'
 
 
 def test_extract_url_handles_encode_path_false(nolog_extractor):
@@ -94,7 +94,7 @@ def test_extract_url_handles_encode_path_false(nolog_extractor):
 
     assert url[0] == 'http://via.placeholder.com/100x100'
     assert url[3] == 'http://via.placeholder.com/ 400x400'
-    assert url[4] == 'https://twicpics.tefal.bg/https://dam.groupeseb.com/m/10ef8f277b681450/Digital-Nordica-Frypan-24cm-05JT-H2-tiff.tiff?timestamp=20240925095255&twic=v1/quality=70/resize=2000'
+    assert url[4] == 'https://images.example.test/https://assets.example.test/media/catalog/product/frypan-24cm.tiff?timestamp=20240925095255&transform=v1/quality=70/resize=2000'
 
 
 def test_strip():
