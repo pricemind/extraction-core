@@ -1,6 +1,6 @@
 [project]
 name = "pricemind-extraction-core"
-version = "0.1.0"
+version = "0.1.2"
 description = "Shared extraction core for Pricemind crawler and transformers"
 readme = "README.md"
 requires-python = ">=3.10,<3.12"
@@ -16,7 +16,7 @@ dependencies = [
   "parsel>=1.6.0,<2",
   "price-parser",
   "python-slugify>=6.1.1,<9",
-  "scutils @ git+https://github.com/pricemind/scutils.git@b3dc626",
+  "scutils @ git+https://github.com/pricemind/scutils.git@bad9491e36882a8f3d33182ec8f325c423d5045c",
 ]
 
 [project.optional-dependencies]
