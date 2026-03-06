@@ -1,0 +1,40 @@
+[project]
+name = "pricemind-extraction-core"
+version = "0.1.0"
+description = "Shared extraction core for Pricemind crawler and transformers"
+readme = "README.md"
+requires-python = ">=3.10,<3.12"
+authors = [
+  { name = "Ludmil Simeonov" }
+]
+dependencies = [
+  "beautifulsoup4>=4.12.0,<5",
+  "chompjs>=1.1.9,<2",
+  "hjson>=3.1.0,<4",
+  "jmespath>=1.0.1,<2",
+  "jsonpath-ng>=1.6.1,<2",
+  "parsel>=1.6.0,<2",
+  "price-parser",
+  "python-slugify>=6.1.1,<9",
+  "scutils @ git+https://github.com/pricemind/scutils.git@b3dc626",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7,<9",
+  "pytest-mock>=3.7,<4",
+]
+
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pricemind_extraction"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
