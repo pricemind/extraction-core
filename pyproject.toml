@@ -16,7 +16,7 @@ dependencies = [
   "parsel>=1.6.0,<2",
   "price-parser",
   "python-slugify>=6.1.1,<9",
-  "scutils @ git+https://github.com/pricemind/scutils.git@bad949150cdcad7f292d5df6fe8ce9456b7b0d8f",
+  "scutils @ git+https://github.com/pricemind/scutils.git@bad9491e36882a8f3d33182ec8f325c423d5045c",
 ]
 
 [project.optional-dependencies]
