@@ -137,8 +137,13 @@ class DefaultExtractor(IExtractor):
             
         # Check each selector for actual content (OR logic: any selector with content = True)
         for q in query:
-            selector = self.get_selector(q)
-            result = selector.select(q).get()  # Execute the selector query
+            try:
+                selector = self.get_selector(q)
+                result = selector.select(q).get()  # Execute the selector query
+            except ValueError as e:
+                raise ValueError(
+                    f"extract_exists failed for selector config {q!r}: {e}"
+                ) from e
             
             # Float values are always considered as existing content
             if isinstance(result, float):

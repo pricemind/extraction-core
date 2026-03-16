@@ -219,6 +219,17 @@ class Selector:
                     raise Exception("Js not supported for Parsel selectors")
         except KeyError:
             raise ValueError('Missing query parameter or type in selector')
+        except ValueError as e:
+            parsel_type = getattr(self.selector, 'type', 'unknown')
+            body_preview = ''
+            if isinstance(self.selector, ParselSelector):
+                raw = self.selector.get()
+                body_preview = (raw[:300] + '…') if raw and len(raw) > 300 else (raw or '')
+            raise ValueError(
+                f"Selector type mismatch: config requests type='{selector.get('type')}' "
+                f"query='{selector.get('query')}', but the underlying ParselSelector "
+                f"has type='{parsel_type}'. Body preview: {body_preview!r}"
+            ) from e
 
     def get(self):
         return self.selector.get()
