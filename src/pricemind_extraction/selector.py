@@ -99,7 +99,13 @@ class JsSelector:
         if selector['type'] == '':
             return SelectorList([])
         if selector['type'] != 'js':
-            raise ValueError('Not a JS selector')
+            js_preview = repr(self.js_data)[:200] if self.js_data else '<empty>'
+            raise ValueError(
+                f"Selector type mismatch on JsSelector: expected type='js' but got "
+                f"type='{selector.get('type')}' query='{selector.get('query', '')}'. "
+                f"This usually means the spider config has a non-JS selector (css/xpath) "
+                f"nested under a 'js' scope. JS data preview: {js_preview}"
+            )
 
         if self.final:
             return SelectorList([JsSelector(js_input=None, final=True, ld_json=False)])

@@ -454,11 +454,18 @@ class DefaultExtractor(IExtractor):
         results = [None] * len(selectors)
         i = 0
         for selector in selectors:
-            # Check if paths is a SelectQuery and if it has only default
             default = selector.get('default', None)
             if default is not None and 'query' not in selector:
                 return default
-            result = callback(self.get_selector(selector), selector)
+            try:
+                result = callback(self.get_selector(selector), selector)
+            except (ValueError, TypeError) as e:
+                raise ValueError(
+                    f"Extraction failed for selector [{i}/{len(selectors)}] "
+                    f"type='{selector.get('type')}' query='{selector.get('query', '')}' "
+                    f"scope='{selector.get('scope', '')}' "
+                    f"js={'yes' if 'js' in selector else 'no'}: {e}"
+                ) from e
             if isinstance(result, bool):
                 result = str(result).lower()
             if isinstance(result, list):
