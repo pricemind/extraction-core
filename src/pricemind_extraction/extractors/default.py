@@ -62,7 +62,7 @@ class IExtractor(ABC):
         pass
 
     @abstractmethod
-    def extract_categories(self, path: [SelectQuery, None, SelectCollectionQuery]) -> [List[str], None]:
+    def extract_categories(self, path: [SelectQuery, List[SelectQuery], None, SelectCollectionQuery]) -> [List[str], None]:
         pass
 
     @abstractmethod
@@ -272,7 +272,10 @@ class DefaultExtractor(IExtractor):
             # Process the URL with the specified encode_path setting
             return process_url(urls, encode_path)
 
-    def extract_categories(self, path: [SelectQuery, None, SelectCollectionQuery]) -> [List[str], None]:
+    def extract_categories(
+            self,
+            path: [SelectQuery, List[SelectQuery], None, SelectCollectionQuery]
+    ) -> [List[str], None]:
         """
         Extracts categories
         :param path:
@@ -280,15 +283,27 @@ class DefaultExtractor(IExtractor):
         """
         if path:
             if isinstance(path, SelectCollectionQuery):
+                strategy = path.strategy or 'first'
                 results = []
                 for p in path.selectors:
                     res = self.extract_categories(p)
-                    if path.strategy == 'first' and res:
+                    if strategy == 'first' and res:
                         return res
-                    results.append(res)
-                return list(chain(*results))
+                    if res:
+                        results.append(res)
+                if strategy == 'all':
+                    return list(chain.from_iterable(results)) if results else None
+                return None
 
-            return list(map(strip, self.get_selector(path).select(path).getall()))
+            if isinstance(path, list):
+                for p in path:
+                    res = self.extract_categories(p)
+                    if res:
+                        return res
+                return None
+
+            result = list(map(strip, self.get_selector(path).select(path).getall()))
+            return result if result else None
 
         return None
 

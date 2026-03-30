@@ -2,7 +2,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from pricemind_extraction.extractors.default import DefaultExtractor, strip
-from pricemind_extraction.selector import Selector
+from pricemind_extraction.selector import Selector, SelectCollectionQuery
 from tests.test_case import get_html
 
 
@@ -95,6 +95,91 @@ def test_extract_url_handles_encode_path_false(nolog_extractor):
     assert url[0] == 'http://via.placeholder.com/100x100'
     assert url[3] == 'http://via.placeholder.com/ 400x400'
     assert url[4] == 'https://images.example.test/https://assets.example.test/media/catalog/product/frypan-24cm.tiff?timestamp=20240925095255&transform=v1/quality=70/resize=2000'
+
+
+def test_extract_categories_single_selector(nolog_extractor):
+    categories = nolog_extractor.extract_categories({
+        'type': 'css',
+        'query': '#breadcrumbs li::text',
+    })
+
+    assert categories == ['One', 'Two', 'Three']
+
+
+def test_extract_categories_falls_back_across_plain_selector_list(nolog_extractor):
+    categories = nolog_extractor.extract_categories([
+        {
+            'type': 'css',
+            'query': '#missing-breadcrumbs li::text',
+        },
+        {
+            'type': 'css',
+            'query': '#breadcrumbs li::text',
+        }
+    ])
+
+    assert categories == ['One', 'Two', 'Three']
+
+
+def test_extract_categories_selector_collection_first(nolog_extractor):
+    categories = nolog_extractor.extract_categories(SelectCollectionQuery(
+        selectors=[
+            {
+                'type': 'css',
+                'query': '#missing-breadcrumbs li::text',
+            },
+            {
+                'type': 'css',
+                'query': '#breadcrumbs li::text',
+            }
+        ],
+        strategy='first'
+    ))
+
+    assert categories == ['One', 'Two', 'Three']
+
+
+def test_extract_categories_selector_collection_all_preserves_order(mocker):
+    logger = mocker.MagicMock()
+    html = '''
+    <html><body>
+    <ul id="crumbs-a"><li>One</li><li>Two</li></ul>
+    <ul id="crumbs-b"><li>Three</li><li>Four</li></ul>
+    </body></html>
+    '''
+    selector = Selector(text=html)
+    extractor = DefaultExtractor(selector, logger)
+
+    categories = extractor.extract_categories(SelectCollectionQuery(
+        selectors=[
+            {
+                'type': 'css',
+                'query': '#crumbs-a li::text',
+            },
+            {
+                'type': 'css',
+                'query': '#crumbs-b li::text',
+            }
+        ],
+        strategy='all'
+    ))
+
+    assert categories == ['One', 'Two', 'Three', 'Four']
+
+
+def test_extract_categories_returns_none_when_no_selector_matches(nolog_extractor):
+    categories = nolog_extractor.extract_categories([
+        {
+            'type': 'css',
+            'query': '#missing-breadcrumbs li::text',
+        },
+        {
+            'type': 'css',
+            'query': '#still-missing-breadcrumbs li::text',
+        }
+    ])
+
+    assert categories is None
 
 
 def test_strip():
