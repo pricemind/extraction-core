@@ -496,9 +496,9 @@ class DefaultExtractor(IExtractor):
             i += 1
 
         if strategy == 'all':
-            # If the result is a list we need to flatten it to one level and make it unique
+            # If the result is a list we need to flatten it to one level and make it unique, keeping source order
             if isinstance(results, list):
-                return list(set(list(chain.from_iterable(results))))
+                return list(dict.fromkeys(chain.from_iterable(results)))
             return results
         elif strategy == 'concat':
             separator = selector_options['separator'] if (selector_options and 'separator' in selector_options) else '-'
