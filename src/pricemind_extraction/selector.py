@@ -1,3 +1,4 @@
+import copy
 import re
 from typing import TypedDict, Any, Union, Optional
 
@@ -9,6 +10,9 @@ from jsonpath_ng.ext import parse
 
 from pricemind_extraction.js_transformers import DummyTransformer, ITransformer, MagentoTransformer
 from pricemind_extraction.encoding import detect_html_encoding, fix_html_encoding, should_detect_encoding
+
+# jsonpath-ng filter syntax, e.g. `items[?(@.type == 'primary')]`
+JSONPATH_FILTER = re.compile(r'\[\s*\?')
 
 
 class RegexReplace(TypedDict):
@@ -159,12 +163,17 @@ class JsSelector:
         else:
             js_data = self.js_data
 
+        # jsonpath-ng filters rewrite dict datums in place (Filter.find assigns datum.value, which writes through
+        # to the parent), so filter on a copy: js_data is cached per page and shared by every selector.
+        if JSONPATH_FILTER.search(query):
+            js_data = copy.deepcopy(js_data)
+
         for match in parse(query).find(js_data):
             if match.value is None:
                 return []
             if isinstance(match.value, list):
                 for item in match.value:
-                    result.append(JsSelector(item))
+                    result.append(self._list_item_selector(item))
             # Check if it's a scalar value and mark it as a final value in the next selector
             # In that way if we matched with a scalar we no longer query with selectors
             # We only return empty values for further queries
@@ -173,6 +182,17 @@ class JsSelector:
                 result.append(JsSelector(match.value, final=isinstance(match.value, (int, float, str, bool))))
 
         return result
+
+    @staticmethod
+    def _list_item_selector(item: Any) -> 'JsSelector':
+        # List items keep being parsed as JS objects, but a plain string such as an image URL is not one and
+        # chompjs raises on it; keep such strings as final values instead of failing the whole extraction.
+        if isinstance(item, str):
+            try:
+                return JsSelector(item)
+            except ValueError:
+                return JsSelector(item, final=True)
+        return JsSelector(item)
 
     def get(self):
         return self.js_data
