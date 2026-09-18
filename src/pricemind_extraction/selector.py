@@ -52,6 +52,9 @@ class PriceSelector(SelectQuery, total=False):
     currency: Union[SelectQuery, str]
     amount: 'PriceSelector'
     format: Optional[str]
+    # Opt-in: treat the extracted value as a machine number ("." decimal separator,
+    # no grouping) and round it to this many decimals before price parsing.
+    decimals: Optional[int]
 
 
 class StockStatusQuery(SelectQuery):

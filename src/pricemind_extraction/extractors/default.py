@@ -1,6 +1,7 @@
 import html
 import re
 import warnings
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from urllib.parse import urljoin, quote, urlparse, urlunparse, unquote
 from itertools import chain
 from abc import ABC, abstractmethod
@@ -619,6 +620,9 @@ class DefaultExtractor(IExtractor):
             if query['format'] == 'int' and price_str is not None:
                 price_str = str(int(price_str) / 100)
 
+        if query.get('decimals') is not None:
+            price_str = round_machine_number(price_str, query['decimals'])
+
         return price_str
 
     def get_selector(self, query: Union[SelectQuery, None]) -> Union[Selector, JsSelector]:
@@ -646,6 +650,26 @@ class DefaultExtractor(IExtractor):
 
     def clean(self):
         self._js_selectors = {}
+
+
+_MACHINE_NUMBER = re.compile(r'^\s*-?\d+(?:\.\d+)?\s*$')
+
+
+def round_machine_number(value, decimals: int):
+    """
+    Round a machine-formatted number (JSON number or "1234.5678" string) to a fixed
+    number of decimals so price parsing cannot read a 3-digit fraction as a thousands group.
+    Values that are not plain machine numbers are returned unchanged.
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        return value
+    if isinstance(value, str) and not _MACHINE_NUMBER.match(value):
+        return value
+    try:
+        places = Decimal(1).scaleb(-int(decimals))
+        return str(Decimal(str(value).strip()).quantize(places, rounding=ROUND_HALF_UP))
+    except (InvalidOperation, ValueError):
+        return value
 
 
 def strip(s: str) -> str:

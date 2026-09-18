@@ -535,3 +535,45 @@ class TestRegexFallbackBehavior:
         # Since none start with 2, the first regex should match the first barcode
         assert result == "7612412015607", \
             f"Expected first barcode '7612412015607', got '{result}'"
+
+
+JS_PRICE_HTML = (
+    '<script>window.__INITIAL_STATE__ = {"product": {"current": '
+    '{"orig": 4231.521, "gross": 90.4281, "whole": 36, "text": "4.231,52"}}}</script>'
+)
+JS_BASE = {'type': 'xpath', 'query': "//script[contains(text(), '__INITIAL_STATE__')]/text()"}
+
+
+@pytest.fixture
+def js_price_extractor(mocker: MockerFixture):
+    return DefaultExtractor(Selector(JS_PRICE_HTML), mocker.MagicMock())
+
+
+def test_js_float_price_without_decimals_keeps_legacy_parsing(js_price_extractor):
+    # Legacy behaviour is intentionally unchanged: a 3-digit fraction reads as a thousands group.
+    price = js_price_extractor.extract_price({'js': JS_BASE, 'type': 'js', 'query': 'product.current.orig'})
+    assert price.amount_float == 4231521
+
+
+@pytest.mark.parametrize('field,expected', [
+    ('orig', '4231.52'),
+    ('gross', '90.43'),
+    ('whole', '36.00'),
+])
+def test_js_float_price_with_decimals(js_price_extractor, field, expected):
+    price = js_price_extractor.extract_price(
+        {'js': JS_BASE, 'type': 'js', 'query': f'product.current.{field}', 'decimals': 2})
+    assert price.amount_text == expected
+
+
+def test_decimals_leaves_localized_strings_alone(js_price_extractor):
+    price = js_price_extractor.extract_price(
+        {'js': JS_BASE, 'type': 'js', 'query': 'product.current.text', 'decimals': 2})
+    assert price.amount_float == 4231.52
+
+
+def test_decimals_on_css_machine_string(mocker: MockerFixture):
+    extractor = DefaultExtractor(Selector('<meta itemprop="price" content="210.511">'), mocker.MagicMock())
+    price = extractor.extract_price(
+        {'type': 'css', 'query': 'meta[itemprop=price]::attr(content)', 'decimals': 2})
+    assert price.amount_text == '210.51'
